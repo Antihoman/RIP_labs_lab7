@@ -15,13 +15,22 @@ final class APIManager {
     
     static let shared = APIManager()
 
-    func getCards(completion: @escaping (Result<[GameCardModel], APIError>) -> Void) {
+    func getCards(search: String = "", completion: @escaping (Result<[GameCardModel], APIError>) -> Void) {
         let urlString = "http://\(host):\(port)/api/cards"
         guard let url = URL(string: urlString) else {
             completion(.failure(.incorrectlyURL))
             return
         }
-        let request = URLRequest(url: url)
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        let parameters: [String: Any] = ["search": search]
+        if let jsonData = try? JSONSerialization.data(withJSONObject: parameters) {
+            request.httpBody = jsonData
+        } else {
+            completion(.failure(.badParameters))
+            return
+        }
+
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error {
                 DispatchQueue.main.async {
